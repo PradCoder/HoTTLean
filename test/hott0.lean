@@ -76,3 +76,26 @@ hott0 def magma :=  Σ (A : Type), A → (A → A)
 -- hott0 theorem hedberg₀ {A : Type} (Π x, y : A) (x =y) + (x ≠ y)
 -- that A has decidable equality. Furthermore, let U be a universe containing
 -- the type A. We will prove that A is a set by Applying Theorem 12.3.4
+-- Recall Currying
+-- Prove by Hand
+
+-- Hedberg's Theorem - Rijke 12.3.5
+-- hott0 theorem hedberg₀ {A : Type} (Π x, y : A) (x =y) + (x ≠ y)
+-- that A has decidable equality. Furthermore, let U be a universe containing
+-- the type A. We will prove that A is a set by Applying Theorem 12.3.4
+
+-- Define Is identity System
+-- Set-Identity-System
+-- 1Lab Definition : https://1lab.dev/1Lab.Path.IdentitySystem.html#sets-and-hedbergs-theorem
+
+hott0 def setIdentitySystem {A: Type} {R : A → A → Type} : ((r : ∀ x : A, R x x ) →
+  ((∀ x y : A, isProp₀ (R x y)) → (isIdentitySystem R r)) := sorry
+
+hott0 def notnotStableIdentitySystem : {∀ x y : A} {¬¬(x = y) → x = y} → isIdentitySystem (λ x y. ¬¬(x = y)) (λ x. x ≠ x. absurd (x ≠ x) (refl))
+
+hott0 def identitySystemPathEq : Type := sorry
+
+hott0 def isIdentitySystem R r → ∀ x y : A, (x = y) ≃ R x y
+hott0 def hedberg {A : Type} : (∀ x y : A, ((x = y) ⊕ (¬ (x = y))) → isSet₀ (A)) := sorry
+
+hott0 example hedberg decEq x y
