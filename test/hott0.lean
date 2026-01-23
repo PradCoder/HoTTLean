@@ -64,13 +64,6 @@ hott0
 -- Beginning Magma Definition
 hott0 def magma :=  Σ (A : Type), A → (A → A)
 
--- Retrying how to solve the pull request for issue
--- Prove that equivalent magmas consisting of set-data (meaning magmas
--- (A,A×A→A) s.t. the underlying type A is a set) are equal using set-univalence in test/hott0.lean.
-
--- Recall Currying
--- Prove by Hand
-
 
 -- Hedberg's Rijke 12.3.5
 -- hott0 theorem hedberg₀ {A : Type} (Π x, y : A) (x =y) + (x ≠ y)
@@ -98,4 +91,40 @@ hott0 def identitySystemPathEq : Type := sorry
 hott0 def isIdentitySystem R r → ∀ x y : A, (x = y) ≃ R x y
 hott0 def hedberg {A : Type} : (∀ x y : A, ((x = y) ⊕ (¬ (x = y))) → isSet₀ (A)) := sorry
 
-hott0 example hedberg decEq x y
+
+-- What I'm trying out here, in case 1 is better than the other, Rijke's is looks better (the 2nd one)
+/-
+Hedberg's Theorem - Proof Structure (1lab.dev)
+
+Hedberg's theorem states that any type A with decidable equality is a set A.
+
+Proof Structure:
+1. Show that decidable equality implies that the type has a stable identity system.
+2. Show ¬¬ (x=y) is a prop for all x,y : A.
+3. Build the identity system using R(x,y) : ¬¬ (x=y).
+4. Identity system with prop-valued relations implies that A is a set.
+
+Lemma 1: Show that decidable equality implies ¬¬-elimination
+Lemma 2: Step 2
+Lemma 3: Identity system (R, r) where R(x,y) := ¬¬(x = y)
+
+Conclude: R pointwise prop → A is a set, by identity system implies A is a set.
+-/
+
+
+
+/-
+Hedberg's Theorem - Proof Structure (Rijke 12.3.5)
+
+1. Build R(x,y) by pattern matching on decidable equality
+
+2. Do case analysis on R(x,y) decidable equality:
+- Case 1: x = y (Prop)
+- Case 2: x ≠ y (Prop)
+
+3. R(x,y) → (x =y)
+
+4. Apply Theorem 12.3.4 to conclude that A is a set.
+
+So we need to prove 12.3.4 aswell!
+-/
