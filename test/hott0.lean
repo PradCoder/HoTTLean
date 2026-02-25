@@ -128,3 +128,7 @@ Hedberg's Theorem - Proof Structure (Rijke 12.3.5)
 
 So we need to prove 12.3.4 aswell!
 -/
+
+-- Decidable equaltiy
+hott0 def Discrete (A : Type): Type :=
+  ∀ (x y : A), (Identity x y) ⊕ (Identity x y → Empty)
