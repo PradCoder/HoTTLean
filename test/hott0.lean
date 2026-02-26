@@ -81,15 +81,15 @@ hott0 def magma :=  Σ (A : Type), A → (A → A)
 -- Set-Identity-System
 -- 1Lab Definition : https://1lab.dev/1Lab.Path.IdentitySystem.html#sets-and-hedbergs-theorem
 
-hott0 def setIdentitySystem {A: Type} {R : A → A → Type} : ((r : ∀ x : A, R x x ) →
-  ((∀ x y : A, isProp₀ (R x y)) → (isIdentitySystem R r)) := sorry
+-- hott0 def setIdentitySystem {A: Type} {R : A → A → Type} : ((r : ∀ x : A, R x x ) →
+--   ((∀ x y : A, isProp₀ (R x y)) → (isIdentitySystem R r)) := sorry
 
-hott0 def notnotStableIdentitySystem : {∀ x y : A} {¬¬(x = y) → x = y} → isIdentitySystem (λ x y. ¬¬(x = y)) (λ x. x ≠ x. absurd (x ≠ x) (refl))
+-- hott0 def notnotStableIdentitySystem : {∀ x y : A} {¬¬(x = y) → x = y} → isIdentitySystem (λ x y. ¬¬(x = y)) (λ x. x ≠ x. absurd (x ≠ x) (refl))
 
-hott0 def identitySystemPathEq : Type := sorry
+-- hott0 def identitySystemPathEq : Type := sorry
 
-hott0 def isIdentitySystem R r → ∀ x y : A, (x = y) ≃ R x y
-hott0 def hedberg {A : Type} : (∀ x y : A, ((x = y) ⊕ (¬ (x = y))) → isSet₀ (A)) := sorry
+-- hott0 def isIdentitySystem R r → ∀ x y : A, (x = y) ≃ R x y
+-- hott0 def hedberg {A : Type} : (∀ x y : A, ((x = y) ⊕ (¬ (x = y))) → isSet₀ (A)) := sorry
 
 
 -- What I'm trying out here, in case 1 is better than the other, Rijke's is looks better (the 2nd one)
@@ -130,5 +130,44 @@ So we need to prove 12.3.4 aswell!
 -/
 
 -- Decidable equaltiy
-hott0 def Discrete (A : Type): Type :=
-  ∀ (x y : A), (Identity x y) ⊕ (Identity x y → Empty)
+-- hott0 def Discrete (A : Type): Type :=
+--   ∀ (x y : A), (Identity x y) ⊕ (Identity x y → Empty)
+
+-- Notation
+-- Implementing Unit and Empty types, for Binary definitions
+-- Current version axiomatizes them, but other forms exist Church/Bóhm-Berarducci
+hott0 axiom Unit : Type
+hott0 axiom star : Unit
+
+-- Unit eliminator : to prove something ∀ x : Unit, prove for star
+hott0 axiom unit_rec
+    {C : Type}
+    (c : C)
+    : Unit → C
+
+-- Computation rule
+hott0 axiom unit_rec_star
+    {C : Type}
+    (c : C)
+    : Identity (unit_rec c star) c
+
+-- Uniqueness: any element of Unit equals star
+hott0 axiom unit_eta
+    (x : Unit)
+    : Identity x star
+
+-- Empty type
+
+hott0 axiom Empty : Type
+
+-- Empty eliminator (ex falso): from Empty you can prove anything
+hott0 axiom empty_rec
+    {C : Type}
+    : Empty → C
+
+-- Unit is a proposition
+hott0 def unit_is_prop : isProp₀ Unit :=
+  λ x y => (unit_eta x).trans₀ (unit_eta y).symm₀
+-- hott0 def Bool : Type := Σ (b : Type), (b = Unit) ⊎ (b = Empty)
+
+--infixr:30 " ⊎ " => Sum
