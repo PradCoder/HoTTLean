@@ -50,11 +50,15 @@ hott0 def isEquiv₀₀_transport₀ {A B : Type} (h : Identity A B) : isEquiv�
 hott0 def Identity.toEquiv₀₀ {A B : Type} : Identity A B → Σ (f : A → B), isEquiv₀₀ f :=
   fun h => ⟨transport₀ h, isEquiv₀₀_transport₀ h⟩
 
-hott0 def isProp₀ (A : Type) : Type :=
-  ∀ (a a' : A) (h h' : Identity a a'), Identity h h'
+hott0
+  /-- The type `A` is (-1)-truncated-/
+  def isProp₀ (A : Type) : Type :=
+    ∀ (a a' : A), (Identity a a')
 
-hott0 def isSet₀ (A : Type) : Type :=
-  ∀ (a b : A), isProp₀ (Identity a b)
+hott0
+  /-- The type `A` is 0-truncated-/
+  def isSet₀ (A : Type) : Type :=
+    ∀ (a b : A), isProp₀ (Identity a b)
 
 hott0
   /-- The univalence axiom for sets. See HoTT book, Axiom 2.10.3. -/
@@ -136,6 +140,8 @@ So we need to prove 12.3.4 aswell!
 -- Notation
 -- Implementing Unit and Empty types, for Binary definitions
 -- Current version axiomatizes them, but other forms exist Church/Bóhm-Berarducci
+
+-- Unit type and constructor
 hott0 axiom Unit : Type
 hott0 axiom star : Unit
 
@@ -157,7 +163,6 @@ hott0 axiom unit_eta
     : Identity x star
 
 -- Empty type
-
 hott0 axiom Empty : Type
 
 -- Empty eliminator (ex falso): from Empty you can prove anything
@@ -165,9 +170,43 @@ hott0 axiom empty_rec
     {C : Type}
     : Empty → C
 
+--Bool
 -- Unit is a proposition
 hott0 def unit_is_prop : isProp₀ Unit :=
   λ x y => (unit_eta x).trans₀ (unit_eta y).symm₀
--- hott0 def Bool : Type := Σ (b : Type), (b = Unit) ⊎ (b = Empty)
 
+hott0 axiom Bool : Type
+hott0 axiom false : Bool
+hott0 axiom true : Bool
+-- Value-level eliminator (for values)
+hott0 axiom bool_rec_val {C : Type} (c_false c_true : C) : Bool → C
+
+-- TYPE-level eliminator (for types)
+hott0 axiom bool_rec_type (A B : Type) : Bool → Type
+
+-- Computation rule
+hott0 axiom bool_rec_type_true (A B : Type) : Identity (bool_rec_type A B true) A
+hott0 axiom bool_rec_type_false (A B : Type) : Identity (bool_rec_type A B false) B
+
+-- Sum type
+hott0 def Sum (A B : Type) : Type :=
+  Σ (b : Bool), bool_rec_type A B b
+
+-- In your Bool section, add these inverse axioms:
+hott0 axiom bool_rec_type_true_inv (A B : Type)
+    : Identity A (bool_rec_type A B true)
+
+hott0 axiom bool_rec_type_false_inv (A B : Type)
+    : Identity B (bool_rec_type A B false)
+
+-- Helper for coercion along type paths
+hott0 def coe {A B : Type} (h : Identity A B) : A → B :=
+    λ a => h.rec (motive := λ T _ => T) a
+
+-- Now constructors work:
+hott0 def inl {A B : Type} (a : A) : Sum A B :=
+  ⟨true, coe (bool_rec_type_true_inv A B) a⟩
+
+hott0 def inr {A B : Type} (b : B) : Sum A B :=
+  ⟨false, coe (bool_rec_type_false_inv A B) b⟩
 --infixr:30 " ⊎ " => Sum
