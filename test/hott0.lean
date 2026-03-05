@@ -222,7 +222,7 @@ hott0 def inl {A B : Type} (a : A) : Sum A B :=
 hott0 def inr {A B : Type} (b : B) : Sum A B :=
   ⟨false, coe (bool_rec_type_false_inv A B) b⟩
 
---- NOOOO!!! I can't use my own notation for the elaborator
+--- NOOOO!!! I can't use my own notation for the elaborator SAAD
 --infixr:30 " ⊎ " => Sum
 
 hott0 def Not (A : Type) : Type := A → Empty
@@ -311,7 +311,7 @@ hott0 axiom R_refl
     (x : A)
     : R A dec x x
 
--- AXIOMATIZED FOR NOW -- BUT should be worked out for theorem
+-- TODO: AXIOMATIZED FOR NOW -- BUT should be worked out for theorem
 -- The identity system theorem
 -- Rijke's stuff and 1 lab proof, pretty much directly
 hott0 axiom identity_system_to_set
@@ -323,7 +323,10 @@ hott0 axiom identity_system_to_set
     : isSet₀ A
 
 -- Hedberg's Theorem: Types with decidable equality are sets
+-- TODO: Check why performance is better on this
 hott0 def hedberg (A : Type) (dec : Discrete A) : isSet₀ A :=
   @identity_system_to_set A (R A dec) (R_refl A dec)
     (R_to_eq A dec)
     (R_is_prop A dec)
+
+-- Next up isSection stuff
