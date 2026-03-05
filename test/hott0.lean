@@ -220,3 +220,96 @@ hott0 def Not (A : Type) : Type := A → Empty
 -- Decidable equality
 hott0 def Discrete (A : Type) : Type :=
   ∀ (x  y : A), Sum (Identity x y) (Not (Identity x y))
+
+-- Sum eliminator
+-- helpers for Sum eliminator
+hott0 def sum_rec_helper_true
+    {A B C : Type}
+    (f : A → C)
+    (x : bool_rec_type A B true)
+    : C :=
+  f (coe (bool_rec_type_true A B) x)
+
+hott0 def sum_rec_helper_false
+    {A B C : Type}
+    (f : B → C)
+    (x : bool_rec_type A B false)
+    : C :=
+  f (coe (bool_rec_type_false A B) x)
+
+-- HACKS!
+hott0 axiom bool_rec_dep
+    {C : Bool → Type}
+    (c_false : C false)
+    (c_true : C true)
+    (b : Bool)
+    : C b
+
+-- EVEN MORE HACKS!!
+-- Sum Eliminator we need
+hott0 def sum_rec
+    {A B C : Type}
+    (f : A → C)
+    (g : B → C)
+    : Sum A B → C
+:= λ s =>
+    (@bool_rec_dep
+      (λ b => bool_rec_type A B b → C)
+      (sum_rec_helper_false g)
+      (sum_rec_helper_true f)
+      s.fst)
+    s.snd -- We need to think interms of explicit projections
+
+-- Type-level sum eliminator (returns types, not values)
+-- Axiomatize type-level sum eliminator
+hott0 axiom sum_rec_type
+    {A B : Type}
+    (f : A → Type)
+    (g : B → Type)
+    : Sum A B → Type
+
+-- Rijke's Relation R Theorem 12.3.4
+hott0 def R' (A : Type) (x y : A)
+    (q : Sum (Identity x y) (Not (Identity x y)))
+    : Type :=
+  sum_rec_type (λ _ => Unit) (λ _ => Empty) q
+
+-- The main relation R using decidability
+hott0 def R (A : Type) (dec : Discrete A) (x y : A) : Type :=
+  R' A x y (dec x y)
+
+-- R(x,y) is always a proposition
+hott0 axiom R_is_prop
+    (A : Type)
+    (dec : Discrete A)
+    (x y : A)
+    : isProp₀ (R A dec x y)
+
+-- R(x,y) implies identity
+hott0 axiom R_to_eq
+    (A : Type)
+    (dec : Discrete A)
+    (x y : A)
+    : R A dec x y → Identity x y
+
+-- R is reflexive
+hott0 axiom R_refl
+    (A : Type)
+    (dec : Discrete A)
+    (x : A)
+    : R A dec x x
+
+-- The identity system theorem
+hott0 axiom identity_system_to_set
+    {A : Type}
+    {R : A → A → Type}
+    {r : ∀ x, R x x}
+    (R_to_id : ∀ x y, R x y → Identity x y)
+    (R_prop : ∀ x y, isProp₀ (R x y))
+    : isSet₀ A
+
+-- Hedberg's Theorem: Types with decidable equality are sets
+hott0 def hedberg (A : Type) (dec : Discrete A) : isSet₀ A :=
+  @identity_system_to_set A (R A dec) (R_refl A dec)
+    (R_to_eq A dec)
+    (R_is_prop A dec)
