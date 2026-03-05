@@ -209,4 +209,14 @@ hott0 def inl {A B : Type} (a : A) : Sum A B :=
 
 hott0 def inr {A B : Type} (b : B) : Sum A B :=
   ⟨false, coe (bool_rec_type_false_inv A B) b⟩
+
+--- NOOOO!!! I can't use my own notation for the elaborator
 --infixr:30 " ⊎ " => Sum
+
+hott0 def Not (A : Type) : Type := A → Empty
+
+-- notation "¬" A => Not A
+
+-- Decidable equality
+hott0 def Discrete (A : Type) : Type :=
+  ∀ (x  y : A), Sum (Identity x y) (Not (Identity x y))
