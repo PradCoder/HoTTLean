@@ -146,12 +146,14 @@ hott0 axiom Unit : Type
 hott0 axiom star : Unit
 
 -- Unit eliminator : to prove something ∀ x : Unit, prove for star
+-- Don't need
 hott0 axiom unit_rec
     {C : Type}
     (c : C)
     : Unit → C
 
 -- Computation rule
+-- Same as before, Every function out is constant
 hott0 axiom unit_rec_star
     {C : Type}
     (c : C)
@@ -183,6 +185,16 @@ hott0 axiom bool_rec_val {C : Type} (c_false c_true : C) : Bool → C
 
 -- TYPE-level eliminator (for types)
 hott0 axiom bool_rec_type (A B : Type) : Bool → Type
+
+-- hott0 axiom bool_elim₀ (P : Bool → Type) (pt : P true) (pf : P false) (b : Bool) : P b
+-- hott0 axiom bool_elim_true₀ {P : Bool → Type} {pt : P true} {pf : P false} : Identity (bool_elim₀ P pt pf true) pt
+-- hott0 axiom bool_elim_false₀ {P : Bool → Type} {pt : P true} {pf : P false} : Identity (bool_elim₀ P pt pf false) pf
+
+-- hott0 axiom bool_elim₁ (P : Bool → Type 1) (pt : P true) (pf : P false) (b : Bool) : P b
+-- hott0 axiom bool_elim_true₁ {P : Bool → Type 1} {pt : P true} {pf : P false} : Identity (bool_elim₁ P pt pf true) pt
+-- hott0 axiom bool_elim_false₁ {P : Bool → Type 1} {pt : P true} {pf : P false} : Identity (bool_elim₁ P pt pf false) pf
+
+-- hott0 def bool_rec_type (A B : Type) := bool_elim₁ (fun _ => Type) A B
 
 -- Computation rule
 hott0 axiom bool_rec_type_true (A B : Type) : Identity (bool_rec_type A B true) A
@@ -299,7 +311,9 @@ hott0 axiom R_refl
     (x : A)
     : R A dec x x
 
+-- AXIOMATIZED FOR NOW -- BUT should be worked out for theorem
 -- The identity system theorem
+-- Rijke's stuff and 1 lab proof, pretty much directly
 hott0 axiom identity_system_to_set
     {A : Type}
     {R : A → A → Type}
