@@ -225,6 +225,18 @@ hott0 def magma_equiv (M N : magma) : Type :=
     Σ (e : isEquiv₀₀ f),
       ∀ (x y : M.carrier), Identity (f (M.op x y)) (N.op (f x) (f y))
 
+-- Identity is an equivalence
+hott0 def id_is_equiv {A : Type} : isEquiv₀₀ (fun (a : A) => a) :=
+  ⟨fun a => a, fun a => a, fun _ => Identity.rfl₀, fun _ => Identity.rfl₀⟩
+
+-- Equal magma's are equiv or equivalence of equality -- straight forward
+hott0 def magma_equiv_of_eq
+    (M N : magma)
+    (p : Identity M N)
+    : magma_equiv M N :=
+  p.rec ⟨fun a => a, id_is_equiv, fun _ _ => Identity.rfl₀⟩
+
+
 hott0
   axiom equiv_retraction {A B : Type}
       (A_set : isSet₀ A) (B_set : isSet₀ B)
@@ -265,11 +277,11 @@ hott0 def subexpr
     (e : magma_equiv M N)
     (x y : N.carrier)
     :=
-    -- sorry
-    ((e.2.2 (e.2.1.1 x) (e.2.1.1 y)).trans₀
-      (ap₂ N.op
-        (equiv_retraction M_set N_set e.1 e.2.1 x)
-        (equiv_retraction M_set N_set e.1 e.2.1 y)))
+    sorry
+    -- ((e.2.2 (e.2.1.1 x) (e.2.1.1 y)).trans₀
+    --   (ap₂ N.op
+    --     (equiv_retraction M_set N_set e.1 e.2.1 x)
+    --     (equiv_retraction M_set N_set e.1 e.2.1 y)))
 
 
 -- VEERRY Sloow, give it 1h 15 mins on a MacBook Air with Apple M4, 16GB RAM
@@ -281,9 +293,9 @@ hott0 def magma_op_eq_pointwise
     (e : magma_equiv M N)
     (x y : N.carrier)
     : Identity (transported_op M N M_set N_set e x y) (N.op x y) :=
-      -- sorry
-  (transport_op M_set N_set e.1 e.2.1 M.op x y).trans₀
-    (subexpr M N M_set N_set e x y)
+      sorry
+  -- (transport_op M_set N_set e.1 e.2.1 M.op x y).trans₀
+  --   (subexpr M N M_set N_set e x y)
 
 -- Apply function extensionality twice
 hott0 def magma_op_eq
