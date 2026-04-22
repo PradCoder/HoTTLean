@@ -141,66 +141,43 @@ So we need to prove 12.3.4 aswell!
 -- Implementing Unit and Empty types, for Binary definitions
 -- Current version axiomatizes them, but other forms exist Church/Bóhm-Berarducci
 
--- Unit: the type with exactly one element.
+-- Unit type
 hott0 axiom Unit : Type
-hott0 axiom star : Unit -- the unique constructor; every element of Unit is equal to this
+hott0 axiom star : Unit
 
--- Eliminator: to define a function out of Unit, just say what happens at star.
--- Every function Unit → C is constant since there is only one input.
 hott0 axiom unit_rec
     {C : Type}
-    (c : C)      -- the value to return; this is the only case
+    (c : C)
     : Unit → C
 
--- Computation rule: unit_rec c applied to star reduces to c.
 hott0 axiom unit_rec_star
     {C : Type}
     (c : C)
     : Identity (unit_rec c star) c
 
--- η-rule (uniqueness): every element x : Unit is equal to star.
--- Together with unit_rec_star this fully pins down Unit up to identity.
 hott0 axiom unit_eta
     (x : Unit)
     : Identity x star
 
--- Empty: the type with no elements (falsehood / absurdity).
+-- Empty type
 hott0 axiom Empty : Type
 
--- Eliminator (ex falso quodlibet): from a proof of Empty you can derive anything.
--- No cases to handle — Empty has no constructors.
 hott0 axiom empty_rec
     {C : Type}
     : Empty → C
 
--- Unit is a proposition: any two elements x y : Unit are equal.
--- Proof: x = star (unit_eta x), and y = star (unit_eta y), so x = star = y.
---   (unit_eta x)          : Identity x star
---   (unit_eta y).symm₀    : Identity star y
---   .trans₀ of the above  : Identity x y
+-- Unit is a proposition
 hott0 def unit_is_prop : isProp₀ Unit :=
   λ x y => (unit_eta x).trans₀ (unit_eta y).symm₀
 
--- Bool: the type with exactly two elements.
+-- Bool type
 hott0 axiom Bool : Type
-hott0 axiom false : Bool -- first constructor
-hott0 axiom true : Bool  -- second constructor
+hott0 axiom false : Bool
+hott0 axiom true : Bool
 
--- Non-dependent (value-level) eliminator: choose a value for each branch.
--- Every Bool → C is determined by its values at false and true.
 hott0 axiom bool_rec_val {C : Type} (c_false c_true : C) : Bool → C
 
--- Type-level eliminator: choose a *type* for each branch.
--- bool_rec_type A B true  is definitionally A  (enforced by bool_rec_type_true below)
--- bool_rec_type A B false is definitionally B  (enforced by bool_rec_type_false below)
--- Axiomatized directly because deriving it from a dependent eliminator
--- runs into universe level issues — see the universe polymorphism note above.
 hott0 axiom bool_rec_type (A B : Type) : Bool → Type
-
--- Dependent eliminators are commented out due to universe level mismatches.
--- bool_elim₀ would work for P : Bool → Type (level 0 motive)
--- but passing `fun _ => Type` to bool_elim₁ (level 1 motive) fails
--- because Type 0 ≢ Type 1 in Lean's type system.
 -- hott0 axiom bool_elim₀ (P : Bool → Type) (pt : P true) (pf : P false) (b : Bool) : P b
 -- hott0 axiom bool_elim_true₀ {P : Bool → Type} {pt : P true} {pf : P false} : Identity (bool_elim₀ P pt pf true) pt
 -- hott0 axiom bool_elim_false₀ {P : Bool → Type} {pt : P true} {pf : P false} : Identity (bool_elim₀ P pt pf false) pf
@@ -209,118 +186,79 @@ hott0 axiom bool_rec_type (A B : Type) : Bool → Type
 -- hott0 axiom bool_elim_false₁ {P : Bool → Type 1} {pt : P true} {pf : P false} : Identity (bool_elim₁ P pt pf false) pf
 -- hott0 def bool_rec_type (A B : Type) := bool_elim₁ (fun _ => Type) A B
 
--- Computation rules: applying bool_rec_type to true gives A, to false gives B.
 hott0 axiom bool_rec_type_true  (A B : Type) : Identity (bool_rec_type A B true)  A
 hott0 axiom bool_rec_type_false (A B : Type) : Identity (bool_rec_type A B false) B
 
--- Sum type (coproduct A ⊎ B): a dependent pair of a boolean tag and a payload.
---   tag = true  → payload lives in bool_rec_type A B true  ≡ A  (left summand)
---   tag = false → payload lives in bool_rec_type A B false ≡ B  (right summand)
+-- Sum type (disjoint union)
 hott0 def Sum (A B : Type) : Type :=
   Σ (b : Bool), bool_rec_type A B b
 
--- The computation rules above give Identity (bool_rec_type A B true) A,
--- but to *inject* into Sum we need the equality in the other direction.
--- These inverse axioms are needed so we can coerce a : A into bool_rec_type A B true.
 hott0 axiom bool_rec_type_true_inv  (A B : Type) : Identity A (bool_rec_type A B true)
 hott0 axiom bool_rec_type_false_inv (A B : Type) : Identity B (bool_rec_type A B false)
 
--- Transport: move a value along a proof that two types are equal.
--- Uses identity recursion with motive (λ T _ => T) to substitute B for A.
+-- Type coercion along equality
 hott0 def coe {A B : Type} (h : Identity A B) : A → B :=
   λ a => h.rec (motive := λ T _ => T) a
 
--- Left injection: tag true, coerce a : A into the true-branch type.
 hott0 def inl {A B : Type} (a : A) : Sum A B :=
-  ⟨true,  coe (bool_rec_type_true_inv  A B) a⟩ -- A →(coe)→ bool_rec_type A B true
+  ⟨true,  coe (bool_rec_type_true_inv  A B) a⟩
 
--- Right injection: tag false, coerce b : B into the false-branch type.
 hott0 def inr {A B : Type} (b : B) : Sum A B :=
-  ⟨false, coe (bool_rec_type_false_inv A B) b⟩ -- B →(coe)→ bool_rec_type A B false
+  ⟨false, coe (bool_rec_type_false_inv A B) b⟩
 
---- NOOOO!!! I can't use my own notation for the elaborator SAAD
---infixr:30 " ⊎ " => Sum
-
--- Negation: Not A means A implies absurdity (there is no proof of A).
 hott0 def Not (A : Type) : Type := A → Empty
 
--- notation "¬" A => Not A
-
--- Decidable equality: for any two elements x y : A, we can decide x = y or x ≠ y.
--- A type with this property is called Discrete (Rijke 12.3).
 hott0 def Discrete (A : Type) : Type :=
   ∀ (x y : A), Sum (Identity x y) (Not (Identity x y))
 
--- Helper for the true branch of sum_rec.
--- x lives in bool_rec_type A B true, which is definitionally A (by bool_rec_type_true).
--- We coerce x back to A and then apply f.
 hott0 def sum_rec_helper_true
     {A B C : Type}
     (f : A → C)
-    (x : bool_rec_type A B true) -- x : bool_rec_type A B true ≡ A (up to Identity)
+    (x : bool_rec_type A B true)
     : C :=
-  f (coe (bool_rec_type_true A B) x) -- coerce x : bool_rec_type A B true → A, then apply f
+  f (coe (bool_rec_type_true A B) x)
 
--- Helper for the false branch of sum_rec.
--- x lives in bool_rec_type A B false, which is definitionally B (by bool_rec_type_false).
--- We coerce x back to B and then apply g.
 hott0 def sum_rec_helper_false
     {A B C : Type}
     (f : B → C)
-    (x : bool_rec_type A B false) -- x : bool_rec_type A B false ≡ B (up to Identity)
+    (x : bool_rec_type A B false)
     : C :=
-  f (coe (bool_rec_type_false A B) x) -- coerce x : bool_rec_type A B false → B, then apply f
+  f (coe (bool_rec_type_false A B) x)
 
--- Dependent Bool eliminator into a type family C : Bool → Type.
--- Given values at false and true, produce a value at any b : Bool.
--- Axiomatized because the universe level of C (level 1, since Bool → Type lives at level 1)
--- cannot be derived from bool_rec_type using the current universe infrastructure.
 hott0 axiom bool_rec_dep
-    {C : Bool → Type}  -- the type family to eliminate into
-    (c_false : C false) -- value at false
-    (c_true  : C true)  -- value at true
+    {C : Bool → Type}
+    (c_false : C false)
+    (c_true  : C true)
     (b : Bool)
-    : C b               -- result at any b
+    : C b
 
--- Non-dependent sum eliminator: given f : A → C and g : B → C, eliminate out of Sum A B.
--- Strategy: use bool_rec_dep with the family (λ b => bool_rec_type A B b → C).
---   - At b = true:  we need bool_rec_type A B true → C, i.e. A → C  (handled by sum_rec_helper_true)
---   - At b = false: we need bool_rec_type A B false → C, i.e. B → C (handled by sum_rec_helper_false)
--- This gives a function (bool_rec_type A B s.fst → C), which we then apply to s.snd.
+-- Sum eliminator
 hott0 def sum_rec
     {A B C : Type}
-    (f : A → C) -- what to do with a left element
-    (g : B → C) -- what to do with a right element
+    (f : A → C)
+    (g : B → C)
     : Sum A B → C
 := λ s =>
     (@bool_rec_dep
-      (λ b => bool_rec_type A B b → C) -- family: at each tag b, a function from the b-branch to C
-      (sum_rec_helper_false g)          -- false branch: coerce to B then apply g
-      (sum_rec_helper_true f)           -- true branch:  coerce to A then apply f
-      s.fst)                            -- dispatch on the tag of s
-    s.snd                               -- apply the resulting function to the payload of s
+      (λ b => bool_rec_type A B b → C)
+      (sum_rec_helper_false g)
+      (sum_rec_helper_true f)
+      s.fst)
+    s.snd
 
--- Type-valued sum eliminator: given f : A → Type and g : B → Type,
--- compute the type for each branch of a Sum A B.
--- Axiomatized separately because type-returning functions live at a higher universe
--- level than value-returning ones; see the universe polymorphism note above.
+-- Type-valued sum eliminator
 hott0 axiom sum_rec_type
     {A B : Type}
-    (f : A → Type) -- type to assign to each element of the left summand
-    (g : B → Type) -- type to assign to each element of the right summand
+    (f : A → Type)
+    (g : B → Type)
     : Sum A B → Type
 
--- R' turns a decidability witness into a proposition:
---   if q says "x = y"  → R' = Unit  (inhabited, but only one element)
---   if q says "x ≠ y"  → R' = Empty (uninhabited)
--- Either way R' is a proposition, so it carries no information beyond yes/no.
+-- Convert decidability to proposition
 hott0 def R' (A : Type) (x y : A)
     (q : Sum (Identity x y) (Not (Identity x y)))
     : Type :=
-  sum_rec_type (λ _ => Unit) (λ _ => Empty) q -- branch on q: left ↦ Unit, right ↦ Empty
+  sum_rec_type (λ _ => Unit) (λ _ => Empty) q
 
--- R(x, y) applies R' to the output of decidability: dec x y decides x = y or x ≠ y,
--- then R' collapses that choice into a proposition.
 hott0 def R (A : Type) (dec : Discrete A) (x y : A) : Type :=
   R' A x y (dec x y) -- feed the decision for this specific x, y into R'
 
