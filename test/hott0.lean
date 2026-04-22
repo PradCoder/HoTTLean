@@ -72,25 +72,14 @@ hott0
     isEquiv₁₀ (@Identity.toEquiv₀₀ A B)
 
 
--- =======================================
--- Action on paths (ap)
--- =======================================
-
--- ap: functions preserve equality.
--- If a = a' in A, and f : A → B, then f(a) = f(a') in B.
--- In other words: equal inputs give equal outputs.
--- Proof: by identity recursion. When a = a (reflexivity), f(a) = f(a) is just rfl.
--- The general case follows because any path a = a' is generated from refl.
+-- Functions preserve paths
 hott0 def ap {A B : Type} (f : A → B) {a a' : A} (p : Identity a a') : Identity (f a) (f a') :=
-  p.rec (Identity.rfl₀) -- base case: p is refl, so both sides are f(a)
+  p.rec (Identity.rfl₀)
 
--- ap₂: binary functions preserve equality in both arguments simultaneously.
--- If a = a' in A and b = b' in B, and f : A → B → C, then f(a,b) = f(a',b') in C.
--- Proof: first use identity recursion on p (a = a') to reduce to the case a = a,
--- then use ap on q (b = b') to handle the second argument.
+-- Binary functions preserve paths in both arguments
 hott0 def ap₂ {A B C : Type} (f : A → B → C) {a a' : A} {b b' : B}
     (p : Identity a a') (q : Identity b b') : Identity (f a b) (f a' b') :=
-  p.rec (ap (f a) q) -- fix the first argument at a, then ap handles the second
+  p.rec (ap (f a) q)
 
 -- =======================================
 -- Sigma (dependent pair) type lemmas
@@ -261,63 +250,46 @@ Step 5: Combine into equality of pairs.
 
 -/
 
--- A magma equivalence: a structure-preserving equivalence between two magmas.
--- Fields: f (the underlying function), e (proof f is an equivalence), and
--- the homomorphism condition (f preserves the operation).
+-- Structure-preserving equivalence between magmas
 hott0 def magma_equiv (M N : magma) : Type :=
-  Σ (f : M.carrier → N.carrier),       -- the forward map
-    Σ (e : isEquiv₀₀ f),               -- f is an equivalence (has a homotopy inverse)
-      ∀ (x y : M.carrier),             -- for all inputs x y in M,
-        Identity (f (M.op x y)) (N.op (f x) (f y)) -- f preserves the operation
+  Σ (f : M.carrier → N.carrier),       -- the map
+    Σ (e : isEquiv₀₀ f),               -- equivalence
+      ∀ (x y : M.carrier),
+        Identity (f (M.op x y)) (N.op (f x) (f y))
 
--- The identity function is always an equivalence.
--- Both inverses are the identity, both section and retraction proofs are refl.
+-- Identity is an equivalence
 hott0 def id_is_equiv {A : Type} : isEquiv₀₀ (fun (a : A) => a) :=
-  ⟨fun a => a,          -- inverse: also the identity
-   fun a => a,          -- second inverse: also the identity
-   fun _ => Identity.rfl₀, -- section: id(id(a)) = a by refl
-   fun _ => Identity.rfl₀⟩ -- retraction: id(id(a)) = a by refl
+  ⟨fun a => a,
+   fun a => a,
+   fun _ => Identity.rfl₀,
+   fun _ => Identity.rfl₀⟩
 
--- If M = N (as pairs), then M and N are equivalent as magmas.
--- Proof: induct on p : Identity M N. When M = N, the identity function works:
--- it's an equivalence (id_is_equiv) and trivially preserves the operation (refl).
+-- M = N → M ≃ N as magmas
 hott0 def magma_equiv_of_eq
     (M N : magma)
-    (p : Identity M N) -- a proof that M and N are literally the same pair
+    (p : Identity M N)
     : magma_equiv M N :=
   p.rec ⟨fun a => a, id_is_equiv, fun _ _ => Identity.rfl₀⟩
-  -- base case p = refl: M = N, so the identity map is a structure-preserving equivalence
 
--- equiv_retraction: f composed with its inverse is the identity on B.
--- i.e. f(f⁻¹(b)) = b for all b : B.
--- This is the "section" direction: going B → A → B gets you back where you started.
--- Axiomatized here because deriving it from isEquiv₀₀ in hott0 is not yet done.
+-- f(f⁻¹(b)) = b for set-magmas
 hott0
   axiom equiv_retraction {A B : Type}
       (A_set : isSet₀ A) (B_set : isSet₀ B)
       (f : A → B) (e : isEquiv₀₀ f) (b : B) :
-    Identity (f (e.1 b)) b -- f(f⁻¹(b)) = b
+    Identity (f (e.1 b)) b
 
 set_option maxHeartbeats 500000000
 
--- Step 1: extract a path between carriers from the magma equivalence.
--- Uses set-univalence: an equivalence f between sets A and B
--- is turned into a path p : Identity A B via (setUv₀₀ A_set B_set).1.
--- .1 extracts the forward map of the univalence equivalence (equiv → path).
+-- Step 1: Extract carrier equality from equivalence via set univalence
 hott0 def magma_carrier_eq
     (M N : magma)
     (M_set : isSet₀ M.carrier)
     (N_set : isSet₀ N.carrier)
-    (e : magma_equiv M N)           -- the magma equivalence
+    (e : magma_equiv M N)
     : Identity M.carrier N.carrier :=
   (setUv₀₀ M_set N_set).1 ⟨e.1, e.2.1⟩
-  -- e.1 is the function, e.2.1 is the proof it's an equivalence
 
--- Step 2: transport M's operation along the carrier path to get an operation on N.carrier.
--- Identity.rec with motive (X ↦ X→X→X) transports the operation across the type equality:
--- starting with M.op : M.carrier → M.carrier → M.carrier,
--- walking along the path p : Identity M.carrier N.carrier,
--- arriving at an operation N.carrier → N.carrier → N.carrier.
+-- Step 2: Transport M's operation to N.carrier via carrier equality
 hott0 def transported_op
     (M N : magma)
     (M_set : isSet₀ M.carrier)
@@ -325,21 +297,14 @@ hott0 def transported_op
     (e : magma_equiv M N)
     : N.carrier → N.carrier → N.carrier :=
   @Identity.rec Type M.carrier
-    (fun X _ => X → X → X)  -- motive: at each type X along the path, a binary op on X
-    M.op                     -- start: M's operation
-    N.carrier                -- end type: N.carrier
-    ((setUv₀₀ M_set N_set).1 ⟨e.1, e.2.1⟩) -- the path from M.carrier to N.carrier
+    (fun X _ => X → X → X)
+    M.op
+    N.carrier
+    ((setUv₀₀ M_set N_set).1 ⟨e.1, e.2.1⟩)
 
--- Univalence axiom doesn't specify, but asserts existence of a path.
--- Left sorry's in, just in case things people want to run it without waiting so long
 set_option diagnostics true
 
--- Step 3a (subexpression): the second half of the pointwise equality chain.
--- Goal: Identity (f(m(f⁻¹(x), f⁻¹(y)))) (n(x, y))
--- This chains:
---   f(m(f⁻¹(x), f⁻¹(y))) = n(f(f⁻¹(x)), f(f⁻¹(y)))  -- by homomorphism (e.2.2)
---   n(f(f⁻¹(x)), f(f⁻¹(y))) = n(x, y)                 -- by retraction twice (ap₂ + equiv_retraction)
--- Currently left as sorry because this subgoal causes performance issues.
+-- Step 3a: Pointwise equality chain (deferred due to performance)
 hott0 def subexpr
     (M N : magma)
     (M_set : isSet₀ M.carrier)
@@ -348,17 +313,8 @@ hott0 def subexpr
     (x y : N.carrier)
     :=
     sorry
-    -- ((e.2.2 (e.2.1.1 x) (e.2.1.1 y)).trans₀       -- homomorphism: f(m(g(x),g(y))) = n(f(g(x)),f(g(y)))
-    --   (ap₂ N.op                                     -- ap₂: apply N.op to both retraction paths
-    --     (equiv_retraction M_set N_set e.1 e.2.1 x)  -- f(f⁻¹(x)) = x
-    --     (equiv_retraction M_set N_set e.1 e.2.1 y))) -- f(f⁻¹(y)) = y
 
--- Step 3 (full): the transported operation equals N's operation at each pair of inputs.
--- Chain: transported_op(x,y) = f(m(f⁻¹(x), f⁻¹(y)))  (by transport_op)
---                             = n(x, y)                  (by subexpr above)
--- Currently left as sorry due to slow elaboration (see performance note above).
--- Full proof shown in commented-out lines below.
--- VEERRY Slow: ~1h 15 mins on a MacBook Air M4, 16GB RAM with only VSCode open.
+-- Step 3: Transported operation equals N's operation pointwise
 hott0 def magma_op_eq_pointwise
     (M N : magma)
     (M_set : isSet₀ M.carrier)
@@ -367,28 +323,19 @@ hott0 def magma_op_eq_pointwise
     (x y : N.carrier)
     : Identity (transported_op M N M_set N_set e x y) (N.op x y) :=
       sorry
-  -- (transport_op M_set N_set e.1 e.2.1 M.op x y).trans₀  -- transported_op(x,y) = f(m(g(x),g(y)))
-  --   (subexpr M N M_set N_set e x y)                      -- f(m(g(x),g(y))) = n(x,y)
 
--- Step 4: the transported operation equals N's operation as a function (not just pointwise).
--- Apply funext₀ on the outer argument x, then funext₀ again on the inner argument y,
--- assembling all the pointwise equalities from magma_op_eq_pointwise into a single
--- path between functions.
+-- Step 4: Operations equal as functions via function extensionality
 hott0 def magma_op_eq
     (M N : magma)
     (M_set : isSet₀ M.carrier)
     (N_set : isSet₀ N.carrier)
     (e : magma_equiv M N)
     : Identity (transported_op M N M_set N_set e) N.op :=
-  funext₀ (fun x =>        -- for each first argument x...
-    funext₀ (fun y =>      -- ...and each second argument y...
-      magma_op_eq_pointwise M N M_set N_set e x y)) -- the operations agree
+  funext₀ (fun x =>
+    funext₀ (fun y =>
+      magma_op_eq_pointwise M N M_set N_set e x y))
 
--- Step 5: combine the carrier equality and operation equality into an equality of magmas.
--- A magma is a dependent pair (carrier, operation), so we use Sigma.eq₁.
--- - First component path:  magma_carrier_eq  (Identity M.carrier N.carrier)
--- - Second component path: magma_op_eq       (Identity transported_op N.op)
--- Sigma.eq₁ packages these into Identity M N.
+-- Step 5: Combine carrier and operation equalities into magma equality
 hott0 def magma_eq_of_equiv
     (M N : magma)
     (M_set : isSet₀ M.carrier)
@@ -396,5 +343,5 @@ hott0 def magma_eq_of_equiv
     (e : magma_equiv M N)
     : Identity M N :=
   Sigma.eq₁
-    (magma_carrier_eq M N M_set N_set e) -- path between carriers (Step 1)
-    (magma_op_eq M N M_set N_set e)      -- path between operations (Step 4)
+    (magma_carrier_eq M N M_set N_set e)
+    (magma_op_eq M N M_set N_set e)
